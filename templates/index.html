@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Klasifikasi Alat Musik Tradisional Indonesia</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Klasifikasi Alat Musik Tradisional Indonesia</h1>
+        </header>
+
+        {% if not model_ready %}
+        <div class="alert alert-warning">
+            Model belum tersedia. Jalankan <code>train_model.py</code> terlebih dahulu untuk melatih model
+            sebelum melakukan prediksi.
+        </div>
+        {% endif %}
+
+        {% if error %}
+        <div class="alert alert-error">{{ error }}</div>
+        {% endif %}
+
+        <div class="card">
+            <form action="/predict" method="post" enctype="multipart/form-data" id="upload-form">
+                <label for="file-input" class="upload-box" id="upload-box">
+                    <input type="file" name="file" id="file-input" accept=".jpg,.jpeg,.png" hidden>
+                    <div class="upload-content">
+                        <span class="upload-icon"></span>
+                        <span class="upload-text">Klik atau seret gambar alat musik ke sini</span>
+                        <span class="upload-hint">Format: JPG, JPEG, PNG (maks. 5MB)</span>
+                    </div>
+                </label>
+                <button type="submit" class="btn-submit" {% if not model_ready %}disabled{% endif %}>
+                    Klasifikasikan Gambar
+                </button>
+            </form>
+        </div>
+
+        {% if prediction %}
+        <div class="card result-card">
+            <h2>Hasil Klasifikasi</h2>
+            <div class="result-content">
+                <img src="{{ image_path }}" alt="Gambar diunggah" class="result-image">
+                <div class="result-details">
+                    <p class="result-label">Prediksi: <strong>{{ prediction | capitalize }}</strong></p>
+                    <p class="result-confidence">Keyakinan Model: <strong>{{ confidence }}%</strong></p>
+
+                    <div class="confidence-bar">
+                        <div class="confidence-fill" style="width: {{ confidence }}%;"></div>
+                    </div>
+
+                    {% if top_predictions %}
+                    <h3>3 Prediksi Teratas</h3>
+                    <ul class="top-predictions">
+                        {% for pred in top_predictions %}
+                        <li>
+                            <span>{{ pred.label | capitalize }}</span>
+                            <span>{{ pred.confidence }}%</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <footer>
+        </footer>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('file-input');
+        const uploadBox = document.getElementById('upload-box');
+        const uploadText = uploadBox.querySelector('.upload-text');
+
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length > 0) {
+                uploadText.textContent = fileInput.files[0].name;
+                uploadBox.classList.add('has-file');
+            }
+        });
+
+        // Drag & drop support
+        ['dragover', 'dragleave', 'drop'].forEach(evt => {
+            uploadBox.addEventListener(evt, (e) => e.preventDefault());
+        });
+        uploadBox.addEventListener('dragover', () => uploadBox.classList.add('dragging'));
+        uploadBox.addEventListener('dragleave', () => uploadBox.classList.remove('dragging'));
+        uploadBox.addEventListener('drop', (e) => {
+            uploadBox.classList.remove('dragging');
+            if (e.dataTransfer.files.length > 0) {
+                fileInput.files = e.dataTransfer.files;
+                uploadText.textContent = e.dataTransfer.files[0].name;
+                uploadBox.classList.add('has-file');
+            }
+        });
+    </script>
+</body>
+</html>
