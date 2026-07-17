@@ -3,11 +3,7 @@ import shutil
 import random
 from icrawler.builtin import BingImageCrawler
 
-# ==============================
-# KONFIGURASI KELAS & KATA KUNCI PENCARIAN
-# ==============================
-# key   : nama folder kelas (dipakai juga sebagai label prediksi)
-# value : daftar kata kunci pencarian (semakin variatif, semakin bagus)
+
 CLASSES = {
     "angklung": ["angklung alat musik", "angklung bambu indonesia"],
     "gamelan": ["gamelan jawa", "gamelan bali instrument"],

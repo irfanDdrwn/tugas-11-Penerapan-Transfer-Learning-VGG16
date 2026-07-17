@@ -1,40 +1,3 @@
-"""
-Script Training Model - Transfer Learning VGG16
-Klasifikasi Jenis Alat Musik Tradisional Indonesia
-
-STRUKTUR DATASET YANG DIBUTUHKAN:
-
-dataset/
-├── train/
-│   ├── angklung/
-│   ├── gamelan/
-│   ├── kolintang/
-│   ├── sasando/
-│   ├── gendang/
-│   ├── rebab/
-│   ├── kecapi/
-│   ├── tifa/
-│   ├── bonang/
-│   └── suling/
-└── validation/
-    ├── angklung/
-    ├── gamelan/
-    ├── kolintang/
-    ├── sasando/
-    ├── gendang/
-    ├── rebab/
-    ├── kecapi/
-    ├── tifa/
-    ├── bonang/
-    └── suling/
-
-Setiap folder kelas diisi gambar alat musik tersebut (disarankan minimal
-100-200 gambar per kelas untuk hasil yang lebih baik).
-
-Cara menjalankan:
-    python train_model.py
-"""
-
 import os
 import json
 from tensorflow.keras.applications import VGG16
@@ -44,9 +7,6 @@ from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
 
-# ==============================
-# KONFIGURASI
-# ==============================
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 TRAIN_DIR = os.path.join(BASE_DIR, 'dataset', 'train')
 VAL_DIR = os.path.join(BASE_DIR, 'dataset', 'validation')
@@ -64,14 +24,14 @@ os.makedirs(MODEL_DIR, exist_ok=True)
 
 def build_model(num_classes):
     """Membangun model dengan pendekatan Feature Extraction dari VGG16."""
-    # Load VGG16 tanpa fully-connected layer, sudah dilatih pada ImageNet
+    
     base_model = VGG16(weights='imagenet', include_top=False, input_shape=(224, 224, 3))
 
-    # Bekukan seluruh layer convolutional agar bobot ImageNet tidak berubah
+    
     for layer in base_model.layers:
         layer.trainable = False
 
-    # Tambahkan classifier baru sesuai jumlah kelas alat musik
+    
     x = Flatten()(base_model.output)
     x = Dense(256, activation='relu')(x)
     x = Dropout(0.5)(x)
@@ -92,7 +52,7 @@ def main():
         print("Silakan siapkan dataset sesuai struktur yang dijelaskan di bagian atas file ini.")
         return
 
-    # Augmentasi data untuk training, hanya rescale untuk validasi
+    
     train_datagen = ImageDataGenerator(
         rescale=1./255,
         rotation_range=20,
@@ -122,7 +82,7 @@ def main():
     print(f"[INFO] Jumlah kelas terdeteksi: {num_classes}")
     print(f"[INFO] Kelas: {train_generator.class_indices}")
 
-    # Simpan mapping label -> index supaya app.py bisa menampilkan nama kelas yang benar
+    
     with open(CLASS_INDEX_PATH, 'w') as f:
         json.dump(train_generator.class_indices, f)
 

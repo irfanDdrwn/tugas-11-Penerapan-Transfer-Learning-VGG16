@@ -1,13 +1,3 @@
-"""
-Aplikasi Web Klasifikasi Jenis Alat Musik Tradisional Indonesia
-Menggunakan Transfer Learning VGG16 + Flask
-
-Cara pakai:
-1. Latih model dulu dengan train_model.py (menghasilkan model/vgg16_alat_musik.h5)
-2. Jalankan aplikasi ini: python app.py
-3. Buka browser ke http://127.0.0.1:5000
-"""
-
 import os
 import numpy as np
 from flask import Flask, request, render_template, url_for
@@ -16,17 +6,12 @@ from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing import image
 from tensorflow.keras.applications.vgg16 import preprocess_input
 
-# ==============================
-# KONFIGURASI
-# ==============================
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 UPLOAD_FOLDER = os.path.join(BASE_DIR, 'static', 'uploads')
 MODEL_PATH = os.path.join(BASE_DIR, 'model', 'vgg16_alat_musik.h5')
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 IMG_SIZE = (224, 224)
 
-# Urutan kelas HARUS sama persis dengan urutan folder saat training
-# (disimpan otomatis oleh train_model.py ke class_indices.json)
 import json
 CLASS_INDEX_PATH = os.path.join(BASE_DIR, 'model', 'class_indices.json')
 
@@ -36,9 +21,6 @@ app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # maksimal 5 MB
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# ==============================
-# LOAD MODEL & LABEL KELAS
-# ==============================
 model = None
 class_labels = []
 
@@ -93,9 +75,6 @@ def predict_image(img_path):
     return label, round(confidence, 2), top_predictions
 
 
-# ==============================
-# ROUTES
-# ==============================
 @app.route('/', methods=['GET'])
 def index():
     return render_template('index.html', model_ready=model is not None)
@@ -143,5 +122,6 @@ def predict():
         )
 
 
-if __name__ == '__main__':
-    app.run(debug=True)
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=False)
