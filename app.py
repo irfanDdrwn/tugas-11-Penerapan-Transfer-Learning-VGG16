@@ -14,6 +14,12 @@ Releases), dan aplikasi akan otomatis download model itu saat pertama kali start
 """
 
 import os
+
+# Batasi TensorFlow supaya tidak alokasikan memori berlebihan (penting
+# untuk platform deploy dengan RAM terbatas seperti Railway)
+os.environ.setdefault('TF_CPP_MIN_LOG_LEVEL', '3')
+os.environ.setdefault('TF_ENABLE_ONEDNN_OPTS', '0')
+
 import requests
 import numpy as np
 from flask import Flask, request, render_template, url_for
