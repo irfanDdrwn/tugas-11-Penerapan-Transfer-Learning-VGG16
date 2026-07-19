@@ -1,4 +1,15 @@
+# Model besar - JANGAN di-push ke GitHub (limit 100MB)
+# Upload manual ke GitHub Releases, lalu set MODEL_URL di Railway
 model/*.h5
-*.h5
+model/vgg16_alat_musik.h5
+
+# File cache python
 __pycache__/
+*.pyc
+
+# Upload gambar user
+static/uploads/*
+!static/uploads/.gitkeep
+
+# Virtual environment
 venv/

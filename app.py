@@ -1,4 +1,20 @@
+"""
+Aplikasi Web Klasifikasi Jenis Alat Musik Tradisional Indonesia
+Menggunakan Transfer Learning VGG16 + Flask
+
+Cara pakai:
+1. Latih model dulu dengan train_model.py (menghasilkan model/vgg16_alat_musik.h5)
+2. Jalankan aplikasi ini: python app.py
+3. Buka browser ke http://127.0.0.1:5000
+
+Untuk deploy ke platform seperti Railway/Render (di mana file model besar
+tidak bisa ikut ter-push ke GitHub karena limit 100MB), set environment
+variable MODEL_URL ke link download langsung file .h5 (misal dari GitHub
+Releases), dan aplikasi akan otomatis download model itu saat pertama kali start.
+"""
+
 import os
+import requests
 import numpy as np
 from flask import Flask, request, render_template, url_for
 from werkzeug.utils import secure_filename
@@ -6,12 +22,22 @@ from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing import image
 from tensorflow.keras.applications.vgg16 import preprocess_input
 
+# ==============================
+# KONFIGURASI
+# ==============================
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 UPLOAD_FOLDER = os.path.join(BASE_DIR, 'static', 'uploads')
 MODEL_PATH = os.path.join(BASE_DIR, 'model', 'vgg16_alat_musik.h5')
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 IMG_SIZE = (224, 224)
 
+# URL download model, di-set lewat environment variable MODEL_URL
+# (misalnya link file dari GitHub Releases). Kosongkan/biarkan default
+# jika model sudah ada langsung di folder model/ (misal saat jalan di lokal).
+MODEL_URL = os.environ.get('MODEL_URL', '')
+
+# Urutan kelas HARUS sama persis dengan urutan folder saat training
+# (disimpan otomatis oleh train_model.py ke class_indices.json)
 import json
 CLASS_INDEX_PATH = os.path.join(BASE_DIR, 'model', 'class_indices.json')
 
@@ -21,12 +47,39 @@ app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # maksimal 5 MB
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
+# ==============================
+# LOAD MODEL & LABEL KELAS
+# ==============================
 model = None
 class_labels = []
+
+def download_model_if_needed():
+    """Download file model dari MODEL_URL jika belum ada di lokal.
+    Berguna untuk platform deploy (Railway/Render) di mana file besar
+    tidak ikut ter-push lewat GitHub."""
+    if os.path.exists(MODEL_PATH):
+        return
+    if not MODEL_URL:
+        print("[PERINGATAN] MODEL_URL tidak di-set dan file model tidak ditemukan lokal.")
+        return
+
+    print(f"[INFO] Model tidak ditemukan lokal, mendownload dari {MODEL_URL} ...")
+    os.makedirs(os.path.dirname(MODEL_PATH), exist_ok=True)
+    try:
+        response = requests.get(MODEL_URL, stream=True, timeout=300)
+        response.raise_for_status()
+        with open(MODEL_PATH, 'wb') as f:
+            for chunk in response.iter_content(chunk_size=8192):
+                f.write(chunk)
+        print(f"[INFO] Model berhasil didownload ke {MODEL_PATH}")
+    except Exception as e:
+        print(f"[ERROR] Gagal download model: {e}")
+
 
 def load_trained_model():
     """Load model dan label kelas jika file model tersedia."""
     global model, class_labels
+    download_model_if_needed()
     if os.path.exists(MODEL_PATH):
         model = load_model(MODEL_PATH)
         if os.path.exists(CLASS_INDEX_PATH):
@@ -75,6 +128,9 @@ def predict_image(img_path):
     return label, round(confidence, 2), top_predictions
 
 
+# ==============================
+# ROUTES
+# ==============================
 @app.route('/', methods=['GET'])
 def index():
     return render_template('index.html', model_ready=model is not None)
@@ -122,6 +178,5 @@ def predict():
         )
 
 
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port, debug=False)
+if __name__ == '__main__':
+    app.run(debug=True)
